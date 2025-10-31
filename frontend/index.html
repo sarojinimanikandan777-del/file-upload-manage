@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Upload Manager</title>
+  <style>
+    body { font-family: Arial; margin: 40px; }
+    input, button { margin: 10px 0; padding: 8px; }
+    .file-list { margin-top: 20px; }
+    .file-item { display: flex; justify-content: space-between; margin: 5px 0; }
+    .file-item button { background: red; color: white; border: none; cursor: pointer; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+  <h1>📂 File Upload Manager</h1>
+
+  <form id="uploadForm">
+    <input type="file" id="fileInput" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>Uploaded Files</h2>
+  <div class="file-list" id="fileList"></div>
+
+  <script>
+    const API_URL = "http://localhost:5000";
+
+    // Load file list
+    async function loadFiles() {
+      const res = await fetch(`${API_URL}/files`);
+      const files = await res.json();
+      const list = document.getElementById("fileList");
+      list.innerHTML = "";
+      files.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `
+          <a href="${API_URL}/${name}" target="_blank">${name}</a>
+          <button onclick="deleteFile('${name}')">Delete</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    // Upload file
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Please select a file");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      loadFiles();
+    });
+
+    // Delete file
+    async function deleteFile(name) {
+      if (confirm(`Delete ${name}?`)) {
+        await fetch(`${API_URL}/files/${name}`, { method: "DELETE" });
+        loadFiles();
+      }
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>
